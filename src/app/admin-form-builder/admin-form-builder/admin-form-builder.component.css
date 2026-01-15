@@ -1,0 +1,354 @@
+.builder-container {
+  display: grid;
+  grid-template-columns: 220px 1fr 300px;
+  height: 100vh;
+  gap: 12px;
+}
+
+/* ---------- PALETTE ---------- */
+.palette {
+  border-right: 1px solid #ddd;
+  padding: 12px;
+}
+
+.palette-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: #f3f3f3;
+  border-radius: 4px;
+  cursor: grab;
+}
+
+/* ---------- CANVAS ---------- */
+.canvas {
+  padding: 12px;
+}
+
+.canvas h4 {
+  margin-top: 16px;
+}
+
+.cdk-drop-list {
+  display: block;
+}
+
+/* 🔴 THIS IS THE IMPORTANT PART */
+#canvasFields,
+#canvasActions {
+  min-height: 120px;
+  border: 2px dashed #bbb;
+  padding: 10px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+/* Items inside canvas */
+.canvas-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  cursor: grab;
+}
+
+/* ---------- EDITOR ---------- */
+.editor {
+  border-left: 1px solid #ddd;
+  padding: 12px;
+}
+ input{
+  border:1px gray solid;
+  border-radius: 5px;
+  padding: 5px;
+}
+.editor input,
+.editor select {
+  width: 100%;
+  margin-bottom: 8px;
+}.editor h3 {
+  margin-bottom: 2px;
+}
+
+.editor h4 {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #444;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 10px;
+}
+
+.editor label {
+  font-weight: 600;
+  display: block;
+  margin-top: 8px;
+}
+button{
+  background-color: gray;
+  border-radius: 15px;
+  padding: 10px;
+  color: white;
+  margin-right: 4px ;
+}
+select{
+    border:1px gray solid;
+  border-radius: 5px;
+  padding: 5px;
+}
+select:focus{
+  border:1px rgb(88, 85, 85) solid;
+}
+
+.canvas-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #d32f2f;
+  font-size: 16px;
+  cursor: pointer;
+}
+/* Add these styles to your existing admin-form-builder.component.css */
+
+/* Selected Item Highlight */
+.canvas-item.selected {
+  background-color: #3b82f6 !important;
+  color: white;
+  border-color: #2563eb;
+}
+
+.canvas-item.selected .delete-btn {
+  color: white;
+  border-color: white;
+}
+
+.canvas-item.selected .delete-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Save Section */
+.save-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.btn-save {
+  width: 100%;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-save:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #9ca3af;
+  font-size: 16px;
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+/* Textarea for Params Map */
+textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Improved Condition Row */
+.condition-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.condition-row select,
+.condition-row input {
+  width: 100%;
+}
+
+.condition-row button {
+  padding: 6px 10px;
+  background-color: #fee;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.condition-row button:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Option Row for Radio */
+.option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.btn-remove {
+  padding: 6px 10px;
+  background-color: #fee;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-remove:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-add {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-add:hover {
+  background-color: #059669;
+}
+
+/* Multi-select styling */
+select[multiple] {
+  min-height: 100px;
+  padding: 8px;
+}
+
+/* Subtitle styling */
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: -10px 0 20px 0;
+  font-style: italic;
+}
+
+/* Checkbox row */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Section headers in editor */
+.editor h4 {
+  color: #374151;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.editor h4:first-of-type {
+  margin-top: 16px;
+}
+
+/* Labels */
+.editor label {
+  display: block;
+  font-weight: 500;
+  margin: 12px 0 6px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Inputs and Selects */
+.editor input:not([type="checkbox"]),
+.editor select,
+.editor textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.editor input:focus,
+.editor select:focus,
+.editor textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Canvas buttons */
+.canvas button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.canvas button:hover {
+  background-color: #2563eb;
+}

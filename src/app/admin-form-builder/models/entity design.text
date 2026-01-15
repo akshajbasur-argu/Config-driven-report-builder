@@ -1,0 +1,20 @@
+Table formMetadata {
+    long id;
+    long version; //default 1
+    varchar key;
+    varchar name;
+    jsonb config;
+    int created_by;  //user_id
+    int updated_by;  //used_id
+    varchar status;
+    date created_at;
+    date updated_at;
+    
+}
+
+enum status{
+    DRAFT/ TESTING,
+    PUBLISHED/ DEPLOYED,
+    DEPRICIATED,
+    ARCHIVED
+}

@@ -12,6 +12,7 @@ export class DropdownDataService {
   }
 
   getDistributors(clientId: number): Observable<any[]> {
+    console.log("client id is: ",clientId)
     const map: any = {
       1: [
         { id: 11, name: 'Distributor A1' },

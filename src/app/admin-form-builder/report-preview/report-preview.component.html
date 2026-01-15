@@ -1,0 +1,39 @@
+<h2>{{ config.title }}</h2>
+
+<form *ngIf="config">
+
+  <div *ngFor="let field of config.fields">
+
+    <!-- DROPDOWN -->
+    <select *ngIf="field.type === 'dropdown'"
+            [(ngModel)]="formData[field.key]"
+            name="{{field.key}}">
+      <option value="">Select {{ field.label }}</option>
+    </select>
+
+    <!-- CHECKBOX -->
+    <label *ngIf="field.type === 'checkbox'">
+      <input type="checkbox"
+             [(ngModel)]="formData[field.key]"
+             name="{{field.key}}" />
+      {{ field.label }}
+    </label>
+
+    <!-- DATE -->
+    <input *ngIf="field.type === 'date'"
+           type="date"
+           [(ngModel)]="formData[field.key]"
+           name="{{field.key}}" />
+
+  </div>
+
+  <div class="actions">
+    <button
+      *ngFor="let action of config.actions"
+      type="button"
+      (click)="actionClick(action)">
+      {{ action.label }}
+    </button>
+  </div>
+
+</form>

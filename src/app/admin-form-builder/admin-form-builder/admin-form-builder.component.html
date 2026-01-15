@@ -1,0 +1,339 @@
+<div class="builder-container" style="background-color: white;">
+
+    <!-- ================= LEFT PALETTE ================= -->
+    <div class="palette">
+
+        <h4>Fields</h4>
+        <div cdkDropList id="paletteFields" [cdkDropListData]="paletteFields"
+            [cdkDropListConnectedTo]="['canvasFields']" [cdkDropListSortingDisabled]="true">
+
+            <div *ngFor="let p of paletteFields" cdkDrag class="palette-item">
+                {{ p.label }}
+            </div>
+        </div>
+
+        <h4>Actions</h4>
+        <div cdkDropList id="paletteActions" [cdkDropListData]="paletteActions"
+            [cdkDropListConnectedTo]="['canvasActions']" [cdkDropListSortingDisabled]="true">
+
+            <div *ngFor="let a of paletteActions" cdkDrag class="palette-item">
+                {{ a.label }}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= CENTER CANVAS ================= -->
+    <div class="canvas">
+
+        <input placeholder="Form Key" [(ngModel)]="formConfig.key" />
+        <input placeholder="Form Title" [(ngModel)]="formConfig.title" />
+
+        <h4>Fields</h4>
+        <div cdkDropList id="canvasFields" [cdkDropListData]="formConfig.fields"
+            [cdkDropListConnectedTo]="['paletteFields']" (cdkDropListDropped)="dropField($event)">
+
+            <div *ngFor="let f of formConfig.fields; let i = index" cdkDrag 
+                class="canvas-item"
+                [class.selected]="selectedFieldIndex === i"
+                (click)="selectFieldByIndex(i)">
+
+                <span>
+                    {{ f.type }} — {{ f.label || 'Unnamed' }}
+                </span>
+
+                <button type="button" class="delete-btn" (click)="deleteField(i); $event.stopPropagation()">
+                    ✕
+                </button>
+            </div>
+
+        </div>
+
+        <h4>Actions</h4>
+        <div cdkDropList id="canvasActions" [cdkDropListData]="formConfig.actions"
+            [cdkDropListConnectedTo]="['paletteActions']" (cdkDropListDropped)="dropAction($event)">
+
+            <div *ngFor="let a of formConfig.actions; let i = index" cdkDrag 
+                class="canvas-item"
+                [class.selected]="selectedActionIndex === i"
+                (click)="selectActionByIndex(i)">
+
+                <span>
+                    {{ a.type }} — {{ a.label || 'Unnamed' }}
+                </span>
+
+                <button type="button" class="delete-btn" (click)="deleteAction(i); $event.stopPropagation()">
+                    ✕
+                </button>
+            </div>
+
+        </div>
+
+        <div style="padding-top: 30px;">
+            <button (click)="preview()">Preview</button>
+            <button (click)="saveConfig()">Save Config</button>
+        </div>
+
+    </div>
+
+    <!-- ================= RIGHT EDITOR ================= -->
+    <div class="editor">
+
+        <!-- ================= FIELD EDITOR ================= -->
+        <div *ngIf="selectedField && selectedFieldIndex >= 0">
+
+            <h3>Field Settings</h3>
+            <p class="subtitle">
+                {{ selectedField.label || selectedField.key || 'New Field' }}
+            </p>
+
+            <!-- ===== BASIC ===== -->
+            <h4>Basic</h4>
+
+            <label>Key</label>
+            <input [(ngModel)]="selectedField.key" placeholder="uniqueFieldKey" />
+
+            <label>Label</label>
+            <input [(ngModel)]="selectedField.label" placeholder="Field Label" />
+
+            <label class="checkbox-row">
+                <input type="checkbox" [(ngModel)]="selectedField.required" />
+                Required
+            </label>
+
+            <!-- ===== MultiSelect Dropdown ===== -->
+            <label class="checkbox-row" *ngIf="selectedField.type === 'dropdown'">
+                <input type="checkbox" [(ngModel)]="selectedField.multiple" />
+                Enable Multi Select
+            </label>
+
+            <!-- ===== LAYOUT & STYLING ===== -->
+            <h4>Layout & Styling</h4>
+
+            <label>Layout Mode</label>
+            <select [(ngModel)]="selectedField.layoutMode">
+                <option value="default">Default (Stacked)</option>
+                <option value="split">Split (Label | Input)</option>
+                <option value="inline">Inline (Label Input)</option>
+            </select>
+
+            <!-- Split Layout Settings -->
+            <div *ngIf="selectedField.layoutMode === 'split'">
+                <label>Label Width</label>
+                <select [(ngModel)]="selectedField.labelWidth">
+                    <option value="col-md-2">2 columns</option>
+                    <option value="col-md-3">3 columns</option>
+                    <option value="col-md-4">4 columns</option>
+                    <option value="col-md-6">6 columns</option>
+                </select>
+
+                <label>Input Width</label>
+                <select [(ngModel)]="selectedField.inputWidth">
+                    <option value="col-md-6">6 columns</option>
+                    <option value="col-md-8">8 columns</option>
+                    <option value="col-md-9">9 columns</option>
+                    <option value="col-md-10">10 columns</option>
+                </select>
+            </div>
+
+            <label>Field Layout (Radio/Checkbox)</label>
+            <select [(ngModel)]="selectedField.inputLayout">
+                <option value="vertical">Vertical (Default)</option>
+                <option value="horizontal">Horizontal (Inline)</option>
+            </select>
+
+            <label>Column Preset</label>
+            <select [(ngModel)]="selectedColumnPreset" (ngModelChange)="applyColumnPreset($event)">
+                <option value="">Custom</option>
+                <option value="col-span-12">Full Width</option>
+                <option value="col-span-6">Half Width</option>
+                <option value="col-span-4">One Third</option>
+                <option value="col-span-3">One Quarter</option>
+            </select>
+
+            <label>Wrapper Classes</label>
+            <input [(ngModel)]="selectedField.class" placeholder="col-span-6 custom-class" />
+
+            <label>Label Classes</label>
+            <input [(ngModel)]="selectedField.labelClass" placeholder="fw-bold text-primary" />
+
+            <label>Bootstrap Input Classes (Multi-Select)</label>
+            <select 
+                multiple 
+                [(ngModel)]="selectedBootstrapClasses"
+                (change)="onBootstrapClassChange($event)"
+                style="min-height: 150px;">
+                <optgroup *ngFor="let group of allBootstrapClasses" [label]="group.category">
+                    <option *ngFor="let cls of group.classes" [value]="cls">{{ cls }}</option>
+                </optgroup>
+            </select>
+
+            <label>Input Classes (Manual)</label>
+            <input [(ngModel)]="selectedField.inputClass" placeholder="w-50 p-2 border rounded" />
+
+            <!-- ===== CONDITIONAL CLASSES ===== -->
+            <h4>Conditional Classes</h4>
+
+            <div class="condition-row" *ngFor="let c of selectedField.conditionalClass; let i = index">
+
+                <select [(ngModel)]="c.when">
+                    <option value="">Select field...</option>
+                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
+                        {{ f.label || f.key }}
+                    </option>
+                </select>
+
+                <input placeholder="Equals value" [(ngModel)]="c.equals" />
+
+                <input placeholder="Class" [(ngModel)]="c.class" />
+
+                <button type="button" (click)="removeCondition(i)">✕</button>
+            </div>
+
+            <button type="button" (click)="addCondition()">
+                + Add Condition
+            </button>
+
+            <!-- ===== CONDITIONAL LABELS ===== -->
+            <h4>Conditional Labels</h4>
+
+            <div class="condition-row" *ngFor="let cl of selectedField.conditionalLabel; let i = index">
+
+                <select [(ngModel)]="cl.when">
+                    <option value="">Select field...</option>
+                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
+                        {{ f.label || f.key }}
+                    </option>
+                </select>
+
+                <input placeholder="Equals value" [(ngModel)]="cl.equals" />
+
+                <input placeholder="New Label" [(ngModel)]="cl.label" />
+
+                <button type="button" (click)="removeConditionalLabel(i)">✕</button>
+            </div>
+
+            <button type="button" (click)="addConditionalLabel()">
+                + Add Conditional Label
+            </button>
+
+            <!-- ===== API CONFIGURATION ===== -->
+            <h4 *ngIf="selectedField.api">API Configuration</h4>
+
+            <div *ngIf="selectedField.api">
+
+                <label>Endpoint</label>
+                <input [(ngModel)]="selectedField.api.endpoint" placeholder="api/endpoint" />
+
+                <!-- API MODE -->
+                <label>API Mode</label>
+                <select [(ngModel)]="selectedField.api.mode">
+                    <option value="load">Load Data</option>
+                    <option value="trigger">Trigger API</option>
+                </select>
+
+                <!-- DEPENDENCIES -->
+                <label>Depends On</label>
+                <select multiple [(ngModel)]="selectedField.api.dependsOn">
+                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
+                        {{ f.label || f.key }}
+                    </option>
+                </select>
+
+                <!-- PARAMS MAP - FIX: Use textarea -->
+                <label>Params Map (JSON)</label>
+                <textarea 
+                    rows="4"
+                    [(ngModel)]="paramsMapString"
+                    placeholder='{"clientId": "clientId"}'
+                    (input)="onParamsMapChange($event)">
+                </textarea>
+
+            </div>
+
+            <!-- ===== STATIC RADIO OPTIONS ===== -->
+            <div *ngIf="selectedField.type === 'radio'">
+
+                <h4>Radio Options</h4>
+
+                <div class="option-row" *ngFor="let opt of selectedField.options; let i = index">
+
+                    <input placeholder="Value" [(ngModel)]="opt.id" />
+
+                    <input placeholder="Label" [(ngModel)]="opt.name" />
+
+                    <button type="button" class="btn-remove" (click)="removeOption(i)">
+                        ✕
+                    </button>
+                </div>
+
+                <button type="button" class="btn-add" (click)="addOption()">
+                    + Add Option
+                </button>
+
+            </div>
+
+            <!-- ===== SAVE BUTTON ===== -->
+            <div class="save-section">
+                <button type="button" class="btn-save" (click)="saveFieldChanges()">
+                    💾 Save Field Settings
+                </button>
+            </div>
+
+        </div>
+
+        <!-- ================= ACTION EDITOR ================= -->
+        <div *ngIf="selectedAction && selectedActionIndex >= 0">
+
+            <h3>Action Settings</h3>
+            <p class="subtitle">
+                {{ selectedAction.label || selectedAction.key || 'New Action' }}
+            </p>
+
+            <h4>Basic</h4>
+
+            <label>Key</label>
+            <input [(ngModel)]="selectedAction.key" placeholder="submit" />
+
+            <label>Label</label>
+            <input [(ngModel)]="selectedAction.label" placeholder="Submit" />
+
+            <h4>Action Behaviour</h4>
+
+            <label>Action Type</label>
+            <select [(ngModel)]="selectedAction.action">
+                <option value="">API Action</option>
+                <option value="reset">Reset</option>
+                <option value="cancel">Cancel</option>
+            </select>
+
+            <div *ngIf="!selectedAction.action">
+
+                <label>API Endpoint</label>
+                <input [(ngModel)]="selectedAction.api!.endpoint" placeholder="/api/submit" />
+
+                <label>HTTP Method</label>
+                <select [(ngModel)]="selectedAction.api!.method">
+                    <option value="POST">POST</option>
+                    <option value="GET">GET</option>
+                </select>
+
+            </div>
+
+            <!-- ===== SAVE BUTTON ===== -->
+            <div class="save-section">
+                <button type="button" class="btn-save" (click)="saveActionChanges()">
+                    💾 Save Action Settings
+                </button>
+            </div>
+
+        </div>
+
+        <!-- ===== EMPTY STATE ===== -->
+        <div *ngIf="!selectedField && !selectedAction" class="empty-state">
+            <p>👈 Select a field or action to edit its settings</p>
+        </div>
+
+    </div>
+
+</div>
