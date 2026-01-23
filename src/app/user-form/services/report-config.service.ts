@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { ReportConfig } from '../models/report-config.model';
 import { T } from '@angular/cdk/keycodes';
 
 @Injectable({ providedIn: 'root' })

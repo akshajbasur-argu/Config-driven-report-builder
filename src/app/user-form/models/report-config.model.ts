@@ -1,8 +1,64 @@
-export interface ReportConfig {
+// report-config.model.ts
+
+export interface ContainerConfig {
+  id: string;
+  name: string;
+  columns: number; // 1-12 column span in grid
+  fields: FieldConfig[];
+  padding?: number;
+}
+
+export interface ContainerFormConfig {
   key: string;
   title: string;
-  fields: FieldConfig[];
+  note?: string;
+  containers: ContainerConfig[];
   actions: ActionConfig[];
+}
+
+export interface FieldConfig {
+  id: string;
+  key: string;
+  label?: string;
+  type: 'dropdown' | 'checkbox' | 'date' | 'radio' | 'textarea' | 'note' | 'text';
+  required?: boolean;
+  multiple?: boolean;
+  
+  // Note field
+  noteText?: string;
+  noteType?: 'info' | 'warning' | 'success' | 'danger';
+  
+  // Styling
+  class?: string;
+  inputClass?: string;
+  labelClass?: string;
+  inputLayout?: 'vertical' | 'horizontal';
+  
+  // Layout modes
+  layoutMode?: 'default' | 'split' | 'inline';
+  labelWidth?: string;
+  inputWidth?: string;
+  
+  // Options
+  options?: FieldOption[];
+  
+  // Conditional behavior
+  conditionalClass?: ConditionalClass[];
+  conditionalLabel?: ConditionalLabel[];
+  
+  // API integration
+  api?: ApiConfig;
+  
+  // Field dependencies
+  resetOnChange?: string[];
+  
+  // Dropdown specific
+  dropdownType?: 'native' | 'primeng';
+  
+  // Date specific
+  dateRestrictions?: DateRestriction;
+  dateRanges?: DateRange[];
+  dateInteractions?: DateInteraction[];
 }
 
 export interface FieldOption {
@@ -10,50 +66,42 @@ export interface FieldOption {
   name: string;
 }
 
-export interface FieldConfig {
-  key: string;
+export interface ConditionalClass {
+  when: string;
+  equals: any;
+  class: string;
+}
+
+export interface ConditionalLabel {
+  when: string;
+  equals: any;
   label: string;
-  type: 'dropdown' | 'checkbox' | 'date' | 'radio' | 'textarea';
-  required?: boolean;
-  multiple?: boolean;
+}
 
-  /* ===== LAYOUT ===== */
-  class?: string;          // wrapper classes (grid / width)
-  inputClass?: string;     // input-specific classes
-  labelClass?: string;     // label-specific classes
-  inputLayout?: 'vertical' | 'horizontal'; // for radio buttons - display inline or stacked
-  
-  /* ===== ADVANCED LAYOUT ===== */
-  layoutMode?: 'default' | 'split' | 'inline'; // NEW: Control label/input positioning
-  labelWidth?: string;     // NEW: Label width (e.g., "col-span-3", "w-1-3")
-  inputWidth?: string;     // NEW: Input width (e.g., "col-span-9", "w-2-3")
-  
-  /* ===== CONDITIONAL LABEL ===== */
-  conditionalLabel?: {     // NEW: Dynamic label based on other field value
-    when: string;          // field key to watch
-    equals: any;           // value to match
-    label: string;         // label to use when matched
-  }[];
+export interface ApiConfig {
+  endpoint: string;
+  dependsOn?: string[];
+  paramsMap?: Record<string, string>;
+  mode?: 'load' | 'trigger';
+}
 
-  /* ===== STATIC OPTIONS ===== */
-  options?: FieldOption[];
+export interface DateRestriction {
+  allowedDays?: number[];
+  disableFuture?: boolean;
+  disablePast?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  restrictedDates?: string[];
+}
 
-  /* ===== CONDITIONAL STYLING ===== */
-  conditionalClass?: {
-    when: string;     // form field key
-    equals: any;      // value to match
-    class: string;    // class to apply
-  }[];
+export interface DateRange {
+  label: string;
+  days: number;
+}
 
-  /* ===== API ===== */
-  api?: {
-    endpoint: string;
-    dependsOn?: string[];
-    paramsMap?: Partial<Record<string, string>>;
-    mode?: 'load' | 'trigger';
-  };
-
-  resetOnChange?: string[];
+export interface DateInteraction {
+  linkedField: string;
+  type: 'minDate' | 'maxDate';
 }
 
 export interface ActionConfig {

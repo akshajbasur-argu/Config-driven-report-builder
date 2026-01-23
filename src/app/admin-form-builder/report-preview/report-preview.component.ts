@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { ReportConfig } from '../../user-form/models/report-config.model';
+import { ContainerFormConfig } from '../../user-form/models/report-config.model';
 import { ReportBuilderComponent } from '../../user-form/report-builder/report-builder.component';
 
 @Component({
@@ -25,6 +25,6 @@ import { ReportBuilderComponent } from '../../user-form/report-builder/report-bu
 export class ReportPreviewComponent {
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { config: ReportConfig }
+    @Inject(MAT_DIALOG_DATA) public data: { config: ContainerFormConfig }
   ) {}
 }

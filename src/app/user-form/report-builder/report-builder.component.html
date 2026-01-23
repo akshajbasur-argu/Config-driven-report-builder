@@ -1,451 +1,452 @@
-<div class="report-wrapper" *ngIf="config && form">
+<!-- Loading State -->
+<div *ngIf="!config || !formReady || !form" class="loading-container">
+  <div class="loading-spinner"></div>
+  <p>Loading form configuration...</p>
+  <p *ngIf="config && !form" style="font-size: 12px; color: #999;">Initializing form controls...</p>
+</div>
 
-  <div class="report-header">
-    {{ config.title }}
-    <span class="info-icon">i</span>
-  </div>
+<!-- Main Form -->
+<ng-container *ngIf="config && formReady && form">
+  <div class="report-wrapper" [formGroup]="form">
 
-  <div class="report-card">
+    <!-- Header -->
+    <div class="report-header">
+      <span class="report-title">{{ config.title }}</span>
+      <span class="info-icon" title="Form Information">ℹ</span>
+    </div>
 
-    <div class="section-header">Report Parameters</div>
+    <div class="report-card">
+      <div class="section-header">Report Parameters</div>
 
-    <form [formGroup]="form" class="form-body" (ngSubmit)="$event.preventDefault()">
+      <!-- Note -->
+      <div *ngIf="config.note" class="form-note">
+        <span class="note-icon">ℹ️</span>
+        <span>{{ config.note }}</span>
+      </div>
 
-      <!-- FIX: Use grid layout for proper responsive design -->
-      <div class="form-grid">
-        
-        <!-- FIX: Move ngClass to a div wrapper instead of ng-container -->
-        <div *ngFor="let f of config.fields" [ngClass]="getWrapperClasses(f)">
+      <!-- Containers -->
+      <div class="containers-grid">
 
-          <!-- DROPDOWN -->
-          <ng-container *ngIf="f.type === 'dropdown'">
-            
-            <!-- Default Layout -->
-            <ng-container *ngIf="!f.layoutMode || f.layoutMode === 'default'">
-              <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                {{ getFieldLabel(f) }}
-                <span *ngIf="f.required" class="required">*</span>
-              </label>
+        <div *ngFor="let container of config.containers; let containerIndex = index; trackBy: trackByContainerId"
+             class="container-item"
+             [ngClass]="getContainerColumnClass(container.columns)"
+             [style.padding.px]="container.padding || 15"
+             [attr.data-container-id]="container.id"
+             [attr.data-container-index]="containerIndex">
 
-              <!-- Multi-select: Show Select All button -->
-               @if(f.multiple && fieldOptions[f.key]){
-               @if( fieldOptions[f.key].length > 0){
-              <div  class="select-all-container">
-                <button 
-                  type="button" 
-                  class="btn-select-all"
-                  (click)="toggleSelectAll(f.key)">
-                  {{ isAllSelected(f.key) ? 'Deselect All' : 'Select All' }}
-                </button>
+          <div class="container-fields">
+
+            <ng-container *ngFor="let field of container.fields; let fieldIndex = index; trackBy: trackByFieldId">
+
+              <div *ngIf="field.type === 'note' || form.get(field.key)"
+                   class="field-wrapper"
+                   [ngClass]="field.class || ''"
+                   [attr.data-field-key]="field.key"
+                   [attr.data-field-index]="fieldIndex">
+
+                <ng-container 
+                  *ngTemplateOutlet="fieldTemplate; context: { field: field, formGroup: form }">
+                </ng-container>
+
               </div>
-            }}
 
-              <select 
-                [id]="f.key"
-                class="form-control" 
-                [formControlName]="f.key" 
-                [multiple]="f.multiple"
-                [ngClass]="f.inputClass || ''"
-                [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched"
-                [attr.disabled]="!fieldReady[f.key] ? true : null">
-
-                <option *ngIf="fieldLoading[f.key]" disabled>Loading...</option>
-                <option *ngIf="!f.multiple && !fieldLoading[f.key]" value="">
-                  {{ fieldReady[f.key] ? 'Select' : '' }}
-                </option>
-                <option *ngFor="let o of fieldOptions[f.key]" [value]="o.id">
-                  {{ o.name }}
-                </option>
-              </select>
             </ng-container>
 
-            <!-- Split Layout -->
-            <ng-container *ngIf="f.layoutMode === 'split'">
-              <div class="field-split-layout">
-                <label [for]="f.key" [ngClass]="(f.labelClass || '') + ' ' + (f.labelWidth || 'col-span-3')">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div [ngClass]="f.inputWidth || 'col-span-9'">
-                  <div *ngIf="f.multiple && fieldOptions[f.key] && fieldOptions[f.key].length > 0" class="select-all-container">
-                    <button 
-                      type="button" 
-                      class="btn-select-all"
-                      (click)="toggleSelectAll(f.key)">
-                      {{ isAllSelected(f.key) ? 'Deselect All' : 'Select All' }}
-                    </button>
-                  </div>
-
-                  <select 
-                    [id]="f.key"
-                    class="form-control" 
-                    [formControlName]="f.key" 
-                    [multiple]="f.multiple"
-                    [ngClass]="f.inputClass || ''"
-                    [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched"
-                    [attr.disabled]="!fieldReady[f.key] ? true : null">
-
-                    <option *ngIf="fieldLoading[f.key]" disabled>Loading...</option>
-                    <option *ngIf="!f.multiple && !fieldLoading[f.key]" value="">
-                      {{ fieldReady[f.key] ? 'Select' : '' }}
-                    </option>
-                    <option *ngFor="let o of fieldOptions[f.key]" [value]="o.id">
-                      {{ o.name }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Inline Layout -->
-            <ng-container *ngIf="f.layoutMode === 'inline'">
-              <div class="field-inline-layout">
-                <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <select 
-                  [id]="f.key"
-                  class="form-control" 
-                  [formControlName]="f.key" 
-                  [multiple]="f.multiple"
-                  [ngClass]="f.inputClass || ''"
-                  [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched"
-                  [attr.disabled]="!fieldReady[f.key] ? true : null">
-
-                  <option *ngIf="fieldLoading[f.key]" disabled>Loading...</option>
-                  <option *ngIf="!f.multiple && !fieldLoading[f.key]" value="">
-                    {{ fieldReady[f.key] ? 'Select' : '' }}
-                  </option>
-                  <option *ngFor="let o of fieldOptions[f.key]" [value]="o.id">
-                    {{ o.name }}
-                  </option>
-                </select>
-              </div>
-            </ng-container>
-
-            <!-- Validation message -->
-            <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-              This field is required
-            </div>
-          </ng-container>
-
-          <!-- CHECKBOX -->
-          <ng-container *ngIf="f.type === 'checkbox'">
-            
-            <!-- Default Layout -->
-            <ng-container *ngIf="!f.layoutMode || f.layoutMode === 'default'">
-              <label [for]="f.key" class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [id]="f.key"
-                  [formControlName]="f.key" 
-                  [ngClass]="f.inputClass || ''" />
-                {{ getFieldLabel(f) }}
-                <span *ngIf="f.required" class="required">*</span>
-              </label>
-            </ng-container>
-
-            <!-- Split Layout -->
-            <ng-container *ngIf="f.layoutMode === 'split'">
-              <div class="field-split-layout">
-                <label [ngClass]="(f.labelClass || '') + ' ' + (f.labelWidth || 'col-span-3')">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div [ngClass]="f.inputWidth || 'col-span-9'">
-                  <label [for]="f.key" class="checkbox-label">
-                    <input 
-                      type="checkbox" 
-                      [id]="f.key"
-                      [formControlName]="f.key" 
-                      [ngClass]="f.inputClass || ''" />
-                    <span class="checkbox-inline-text">{{ f.label }}</span>
-                  </label>
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Inline Layout -->
-            <ng-container *ngIf="f.layoutMode === 'inline'">
-              <div class="field-inline-layout">
-                <label [for]="f.key" class="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    [id]="f.key"
-                    [formControlName]="f.key" 
-                    [ngClass]="f.inputClass || ''" />
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-              </div>
-            </ng-container>
-
-          </ng-container>
-
-          <!-- DATE -->
-          <ng-container *ngIf="f.type === 'date'">
-            
-            <!-- Default Layout -->
-            <ng-container *ngIf="!f.layoutMode || f.layoutMode === 'default'">
-              <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                {{ getFieldLabel(f) }}
-                <span *ngIf="f.required" class="required">*</span>
-              </label>
-              <input 
-                type="date" 
-                [id]="f.key"
-                class="form-control" 
-                [formControlName]="f.key" 
-                [ngClass]="f.inputClass || ''"
-                [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched" />
-              
-              <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                This field is required
-              </div>
-            </ng-container>
-
-            <!-- Split Layout -->
-            <ng-container *ngIf="f.layoutMode === 'split'">
-              <div class="field-split-layout d-flex">
-                <label [for]="f.key" [class]="(f.labelClass || '') + ' ' + (f.labelWidth || 'col-span-3')">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div [ngClass]="f.inputWidth || 'col-span-9'">
-                  <input 
-                    type="date" 
-                    [id]="f.key"
-                    class="form-control" 
-                    [formControlName]="f.key" 
-                    [ngClass]="f.inputClass || ''"
-                    [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched" />
-                  
-                  <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                    This field is required
-                  </div>
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Inline Layout -->
-            <ng-container *ngIf="f.layoutMode === 'inline'">
-              <div class="field-inline-layout">
-                <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <input 
-                  type="date" 
-                  [id]="f.key"
-                  class="form-control form-control-inline" 
-                  [formControlName]="f.key" 
-                  [ngClass]="f.inputClass || ''"
-                  [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched" />
-                
-                <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                  This field is required
-                </div>
-              </div>
-            </ng-container>
-
-          </ng-container>
-
-          <!-- TEXTAREA -->
-          <ng-container *ngIf="f.type === 'textarea'">
-            
-            <!-- Default Layout -->
-            <ng-container *ngIf="!f.layoutMode || f.layoutMode === 'default'">
-              <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                {{ getFieldLabel(f) }}
-                <span *ngIf="f.required" class="required">*</span>
-              </label>
-              <textarea 
-                [id]="f.key"
-                class="form-control" 
-                rows="3" 
-                [formControlName]="f.key" 
-                [ngClass]="f.inputClass || ''"
-                [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched">
-              </textarea>
-              
-              <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                This field is required
-              </div>
-            </ng-container>
-
-            <!-- Split Layout -->
-            <ng-container *ngIf="f.layoutMode === 'split'">
-              <div class="field-split-layout">
-                <label [for]="f.key" [ngClass]="(f.labelClass || '') + ' ' + (f.labelWidth || 'col-span-3')">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div [ngClass]="f.inputWidth || 'col-span-9'">
-                  <textarea 
-                    [id]="f.key"
-                    class="form-control" 
-                    rows="3" 
-                    [formControlName]="f.key" 
-                    [ngClass]="f.inputClass || ''"
-                    [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched">
-                  </textarea>
-                  
-                  <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                    This field is required
-                  </div>
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Inline Layout -->
-            <ng-container *ngIf="f.layoutMode === 'inline'">
-              <div class="field-inline-layout field-inline-textarea">
-                <label [for]="f.key" [ngClass]="f.labelClass || ''">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <textarea 
-                  [id]="f.key"
-                  class="form-control form-control-inline" 
-                  rows="3" 
-                  [formControlName]="f.key" 
-                  [ngClass]="f.inputClass || ''"
-                  [class.is-invalid]="form.get(f.key)?.invalid && form.get(f.key)?.touched">
-                </textarea>
-                
-                <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-                  This field is required
-                </div>
-              </div>
-            </ng-container>
-
-          </ng-container>
-
-          <!-- RADIO -->
-          <ng-container *ngIf="f.type === 'radio'">
-            
-            <!-- Default Layout -->
-            <ng-container *ngIf="!f.layoutMode || f.layoutMode === 'default'">
-              <label [ngClass]="f.labelClass || ''">
-                {{ getFieldLabel(f) }}
-                <span *ngIf="f.required" class="required">*</span>
-              </label>
-
-              <div 
-                class="radio-group" 
-                [ngClass]="f.inputLayout === 'horizontal' ? 'radio-group-horizontal' : 'radio-group-vertical'">
-                <div *ngIf="fieldLoading[f.key]" class="loading-text">Loading options...</div>
-                
-                <label 
-                  *ngFor="let o of (f.options && f.options.length > 0 ? f.options : fieldOptions[f.key])" 
-                  class="radio-label"
-                  [for]="f.key + '_' + o.id">
-                  <input 
-                    type="radio" 
-                    [id]="f.key + '_' + o.id"
-                    [value]="o.id" 
-                    [formControlName]="f.key" 
-                    [ngClass]="f.inputClass || ''" />
-                  {{ o.name }}
-                </label>
-              </div>
-            </ng-container>
-
-            <!-- Split Layout -->
-            <ng-container *ngIf="f.layoutMode === 'split'">
-              <div class="field-split-layout">
-                <label [ngClass]="(f.labelClass || '') + ' ' + (f.labelWidth || 'col-span-3')">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div [ngClass]="f.inputWidth || 'col-span-9'">
-                  <div 
-                    class="radio-group" 
-                    [ngClass]="f.inputLayout === 'horizontal' ? 'radio-group-horizontal' : 'radio-group-vertical'">
-                    <div *ngIf="fieldLoading[f.key]" class="loading-text">Loading options...</div>
-                    
-                    <label 
-                      *ngFor="let o of (f.options && f.options.length > 0 ? f.options : fieldOptions[f.key])" 
-                      class="radio-label"
-                      [for]="f.key + '_' + o.id">
-                      <input 
-                        type="radio" 
-                        [id]="f.key + '_' + o.id"
-                        [value]="o.id" 
-                        [formControlName]="f.key" 
-                        [ngClass]="f.inputClass || ''" />
-                      {{ o.name }}
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </ng-container>
-
-            <!-- Inline Layout -->
-            <ng-container *ngIf="f.layoutMode === 'inline'">
-              <div class="field-inline-layout">
-                <label [ngClass]="f.labelClass || ''">
-                  {{ getFieldLabel(f) }}
-                  <span *ngIf="f.required" class="required">*</span>
-                </label>
-
-                <div 
-                  class="radio-group-inline-compact" 
-                  [ngClass]="f.inputLayout === 'horizontal' ? 'radio-group-horizontal' : 'radio-group-vertical'">
-                  <div *ngIf="fieldLoading[f.key]" class="loading-text">Loading options...</div>
-                  
-                  <label 
-                    *ngFor="let o of (f.options && f.options.length > 0 ? f.options : fieldOptions[f.key])" 
-                    class="radio-label"
-                    [for]="f.key + '_' + o.id">
-                    <input 
-                      type="radio" 
-                      [id]="f.key + '_' + o.id"
-                      [value]="o.id" 
-                      [formControlName]="f.key" 
-                      [ngClass]="f.inputClass || ''" />
-                    {{ o.name }}
-                  </label>
-                </div>
-              </div>
-            </ng-container>
-
-            <div *ngIf="form.get(f.key)?.invalid && form.get(f.key)?.touched" class="error-message">
-              Please select an option
-            </div>
-          </ng-container>
-
+          </div>
         </div>
 
       </div>
 
-      <!-- Action buttons -->
-      <div class="form-actions">
-        <button 
-          *ngFor="let a of config.actions" 
-          type="button"
-          class="btn"
-          [ngClass]="a.type === 'primary' ? 'btn-submit' : 'btn-cancel'" 
-          (click)="handleAction(a)"
-          [disabled]="a.key === 'submit' && form.invalid">
-          {{ a.label }}
+      <!-- Actions -->
+      <div class="form-actions" *ngIf="config.actions?.length">
+        <button *ngFor="let action of config.actions; trackBy: trackByActionKey"
+                type="button"
+                class="btn"
+                [ngClass]="action.type === 'primary' ? 'btn-submit' : 'btn-cancel'"
+                (click)="handleAction(action)"
+                [disabled]="action.type === 'primary' && form.invalid">
+          {{ action.label }}
         </button>
       </div>
 
-    </form>
+    </div>
   </div>
-</div>
+</ng-container>
 
-<!-- Loading state -->
-<div *ngIf="!config || !form" class="loading-container">
-  <p>Loading form...</p>
-</div>
+
+<!-- ================= FIELD TEMPLATE ================= -->
+<ng-template #fieldTemplate let-field="field" let-formGroup="formGroup">
+
+  <div [formGroup]="formGroup">
+
+    <!-- NOTE -->
+    <ng-container *ngIf="field.type === 'note'">
+      <div class="field-note" [ngClass]="'note-' + (field.noteType || 'info')">
+        <strong>Note:</strong> {{ field.noteText || 'No note text provided' }}
+      </div>
+    </ng-container>
+
+    <!-- TEXT INPUT -->
+    <ng-container *ngIf="field.type === 'text'">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [for]="field.key" [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+        <input type="text" 
+               [id]="field.key"
+               class="form-control" 
+               [formControlName]="field.key"
+               [ngClass]="field.inputClass || ''"
+               [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched">
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          This field is required
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [for]="field.key" [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <input type="text" 
+                   [id]="field.key"
+                   class="form-control" 
+                   [formControlName]="field.key"
+                   [ngClass]="field.inputClass || ''"
+                   [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched">
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              This field is required
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- DROPDOWN (NATIVE) -->
+    <ng-container *ngIf="field.type === 'dropdown' && (!field.dropdownType || field.dropdownType === 'native')">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [for]="field.key" [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+
+        <!-- Select All Button for Multi-Select -->
+        <div *ngIf="field.multiple && fieldOptions[field.key] && fieldOptions[field.key].length > 0" class="select-all-container">
+          <button type="button" class="btn-select-all" (click)="toggleSelectAll(field.key)">
+            {{ isAllSelected(field.key) ? 'Deselect All' : 'Select All' }}
+          </button>
+        </div>
+
+        <select [id]="field.key"
+                class="form-control" 
+                [formControlName]="field.key" 
+                [multiple]="field.multiple"
+                [ngClass]="field.inputClass || ''"
+                [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched"
+                [attr.disabled]="!fieldReady[field.key] ? true : null">
+          <option *ngIf="fieldLoading[field.key]" disabled>Loading...</option>
+          <option *ngIf="!field.multiple && !fieldLoading[field.key]" value="">
+            {{ fieldReady[field.key] ? 'Select' : '' }}
+          </option>
+          <option *ngFor="let opt of fieldOptions[field.key] || field.options; trackBy: trackByOptionId" [value]="opt.id">
+            {{ opt.name }}
+          </option>
+        </select>
+
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          This field is required
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [for]="field.key" [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <div *ngIf="field.multiple && fieldOptions[field.key] &&fieldOptions[field.key].length > 0" class="select-all-container">
+              <button type="button" class="btn-select-all" (click)="toggleSelectAll(field.key)">
+                {{ isAllSelected(field.key) ? 'Deselect All' : 'Select All' }}
+              </button>
+            </div>
+
+            <select [id]="field.key"
+                    class="form-control" 
+                    [formControlName]="field.key" 
+                    [multiple]="field.multiple"
+                    [ngClass]="field.inputClass || ''"
+                    [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched"
+                    [attr.disabled]="!fieldReady[field.key] ? true : null">
+              <option *ngIf="fieldLoading[field.key]" disabled>Loading...</option>
+              <option *ngIf="!field.multiple && !fieldLoading[field.key]" value="">
+                {{ fieldReady[field.key] ? 'Select' : '' }}
+              </option>
+              <option *ngFor="let opt of fieldOptions[field.key] || field.options; trackBy: trackByOptionId" [value]="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              This field is required
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- DROPDOWN (PRIMENG) -->
+    <ng-container *ngIf="field.type === 'dropdown' && field.dropdownType === 'primeng'">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [for]="field.key" [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+
+        <p-autoComplete
+          [formControlName]="field.key"
+          [suggestions]="filteredOptions[field.key] || []"
+          optionLabel="name"
+          [dataKey]="'id'"
+          [multiple]="field.multiple"
+          [dropdown]="true"
+          (completeMethod)="onAutoCompleteFilter($event, field.key)"
+          (onDropdownClick)="onAutoCompleteDropdown(field.key)"
+          [showClear]="true"
+          [ngClass]="field.inputClass || ''"
+          styleClass="w-100"
+          [inputStyleClass]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched ? 'p-invalid' : ''"
+          placeholder="Select an option"
+          [disabled]="!fieldReady[field.key]">
+        </p-autoComplete>
+
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          This field is required
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [for]="field.key" [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <p-autoComplete
+              [formControlName]="field.key"
+              [suggestions]="filteredOptions[field.key] || []"
+              optionLabel="name"
+              [dataKey]="'id'"
+              [multiple]="field.multiple"
+              [dropdown]="true"
+              (completeMethod)="onAutoCompleteFilter($event, field.key)"
+              (onDropdownClick)="onAutoCompleteDropdown(field.key)"
+              [showClear]="true"
+              [ngClass]="field.inputClass || ''"
+              styleClass="w-100"
+              [inputStyleClass]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched ? 'p-invalid' : ''"
+              placeholder="Select an option"
+              [disabled]="!fieldReady[field.key]">
+            </p-autoComplete>
+
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              This field is required
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- DATE -->
+    <ng-container *ngIf="field.type === 'date'">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [for]="field.key" [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+
+        <!-- Date Range Shortcuts -->
+        <div *ngIf="field.dateRanges?.length > 0" class="date-range-shortcuts">
+          <button *ngFor="let range of field.dateRanges; trackBy: trackByRangeLabel"
+                  type="button"
+                  class="btn-date-range"
+                  (click)="applyDateRange(field.key, range.days)">
+            {{ range.label }}
+          </button>
+        </div>
+
+        <input type="date"
+               [id]="field.key"
+               class="form-control"
+               [formControlName]="field.key"
+               [ngClass]="field.inputClass || ''"
+               [attr.min]="getDateMinAttribute(field.key)"
+               [attr.max]="getDateMaxAttribute(field.key)"
+               [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched">
+
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          This field is required
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [for]="field.key" [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <div *ngIf="field.dateRanges?.length > 0" class="date-range-shortcuts">
+              <button *ngFor="let range of field.dateRanges; trackBy: trackByRangeLabel"
+                      type="button"
+                      class="btn-date-range"
+                      (click)="applyDateRange(field.key, range.days)">
+                {{ range.label }}
+              </button>
+            </div>
+
+            <input type="date"
+                   [id]="field.key"
+                   class="form-control"
+                   [formControlName]="field.key"
+                   [ngClass]="field.inputClass || ''"
+                   [attr.min]="getDateMinAttribute(field.key)"
+                   [attr.max]="getDateMaxAttribute(field.key)"
+                   [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched">
+
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              This field is required
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- CHECKBOX -->
+    <ng-container *ngIf="field.type === 'checkbox'">
+      <label [for]="field.key" class="checkbox-label">
+        <input type="checkbox" 
+               [id]="field.key"
+               [formControlName]="field.key"
+               [ngClass]="field.inputClass || ''">
+        <span>{{ getFieldLabel(field) }}</span>
+        <span *ngIf="field.required" class="required">*</span>
+      </label>
+    </ng-container>
+
+    <!-- TEXTAREA -->
+    <ng-container *ngIf="field.type === 'textarea'">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [for]="field.key" [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+        <textarea [id]="field.key"
+                  class="form-control" 
+                  rows="3" 
+                  [formControlName]="field.key"
+                  [ngClass]="field.inputClass || ''"
+                  [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched"></textarea>
+
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          This field is required
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [for]="field.key" [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <textarea [id]="field.key"
+                      class="form-control" 
+                      rows="3" 
+                      [formControlName]="field.key"
+                      [ngClass]="field.inputClass || ''"
+                      [class.is-invalid]="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched"></textarea>
+
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              This field is required
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- RADIO -->
+    <ng-container *ngIf="field.type === 'radio'">
+      <!-- Default Layout -->
+      <ng-container *ngIf="!field.layoutMode || field.layoutMode === 'default'">
+        <label [ngClass]="field.labelClass || ''">
+          {{ getFieldLabel(field) }}
+          <span *ngIf="field.required" class="required">*</span>
+        </label>
+
+        <div class="radio-group" [ngClass]="field.inputLayout === 'horizontal' ? 'radio-group-horizontal' : 'radio-group-vertical'">
+          <div *ngIf="fieldLoading[field.key]" class="loading-text">Loading options...</div>
+          
+          <label *ngFor="let opt of (field.options?.length > 0 ? field.options : fieldOptions[field.key]); trackBy: trackByOptionId"
+                 class="radio-label"
+                 [for]="field.key + '_' + opt.id">
+            <input type="radio" 
+                   [id]="field.key + '_' + opt.id"
+                   [value]="opt.id" 
+                   [formControlName]="field.key"
+                   [ngClass]="field.inputClass || ''">
+            <span>{{ opt.name }}</span>
+          </label>
+        </div>
+
+        <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+          Please select an option
+        </div>
+      </ng-container>
+
+      <!-- Split Layout -->
+      <ng-container *ngIf="field.layoutMode === 'split'">
+        <div class="field-split-layout">
+          <label [ngClass]="(field.labelClass || '') + ' ' + (field.labelWidth || 'col-md-3')">
+            {{ getFieldLabel(field) }}
+            <span *ngIf="field.required" class="required">*</span>
+          </label>
+          <div [ngClass]="field.inputWidth || 'col-md-9'">
+            <div class="radio-group" [ngClass]="field.inputLayout === 'horizontal' ? 'radio-group-horizontal' : 'radio-group-vertical'">
+              <div *ngIf="fieldLoading[field.key]" class="loading-text">Loading options...</div>
+              
+              <label *ngFor="let opt of (field.options?.length > 0 ? field.options : fieldOptions[field.key]); trackBy: trackByOptionId"
+                     class="radio-label"
+                     [for]="field.key + '_' + opt.id">
+                <input type="radio" 
+                       [id]="field.key + '_' + opt.id"
+                       [value]="opt.id" 
+                       [formControlName]="field.key"
+                       [ngClass]="field.inputClass || ''">
+                <span>{{ opt.name }}</span>
+              </label>
+            </div>
+
+            <div *ngIf="formGroup.get(field.key)?.invalid && formGroup.get(field.key)?.touched" class="error-message">
+              Please select an option
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+  </div>
+</ng-template>

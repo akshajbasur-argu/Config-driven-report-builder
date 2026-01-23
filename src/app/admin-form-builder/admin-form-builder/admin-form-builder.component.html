@@ -1,339 +1,464 @@
-<div class="builder-container" style="background-color: white;">
+<!-- admin-form-builder.component.html -->
 
-    <!-- ================= LEFT PALETTE ================= -->
-    <div class="palette">
+<div class="page-container">
+  <div class="main-header">
+      <h2>🎨 Form Configurator with Containers</h2>
+    </div>
+  <div class="main-box">
+    
 
-        <h4>Fields</h4>
-        <div cdkDropList id="paletteFields" [cdkDropListData]="paletteFields"
-            [cdkDropListConnectedTo]="['canvasFields']" [cdkDropListSortingDisabled]="true">
+    <!-- LEFT PANEL: PALETTE -->
+    <div class="inner-box">
+      <div class="inner-header">
+        <h4>📦 Components Palette</h4>
+      </div>
+      <div class="inner-content">
 
-            <div *ngFor="let p of paletteFields" cdkDrag class="palette-item">
-                {{ p.label }}
-            </div>
+        <h5>Containers</h5>
+        <button class="btn-add" (click)="addContainer()" style="width: 100%; margin-bottom: 20px;">
+          ➕ Add Container
+        </button>
+
+        <h5>Fields</h5>
+        <div cdkDropList [cdkDropListData]="paletteFields" [cdkDropListConnectedTo]="getContainerDropListIds()"
+          [cdkDropListSortingDisabled]="true">
+          <div *ngFor="let field of paletteFields" cdkDrag class="palette-item">
+            {{ field.label }}
+          </div>
         </div>
 
-        <h4>Actions</h4>
+        <h5 style="margin-top: 20px;">Actions</h5>
         <div cdkDropList id="paletteActions" [cdkDropListData]="paletteActions"
-            [cdkDropListConnectedTo]="['canvasActions']" [cdkDropListSortingDisabled]="true">
-
-            <div *ngFor="let a of paletteActions" cdkDrag class="palette-item">
-                {{ a.label }}
-            </div>
+          [cdkDropListConnectedTo]="['canvasActions']" [cdkDropListSortingDisabled]="true">
+          <div *ngFor="let action of paletteActions" cdkDrag class="palette-item">
+            {{ action.label }}
+          </div>
         </div>
 
+      </div>
     </div>
 
-    <!-- ================= CENTER CANVAS ================= -->
-    <div class="canvas">
+    <!-- MIDDLE PANEL: CANVAS -->
+    <div class="inner-box">
+      <div class="inner-header">
+        <h4>🖼️ Form Canvas</h4>
+      </div>
+      <div class="inner-content">
 
-        <input placeholder="Form Key" [(ngModel)]="formConfig.key" />
-        <input placeholder="Form Title" [(ngModel)]="formConfig.title" />
-
-        <h4>Fields</h4>
-        <div cdkDropList id="canvasFields" [cdkDropListData]="formConfig.fields"
-            [cdkDropListConnectedTo]="['paletteFields']" (cdkDropListDropped)="dropField($event)">
-
-            <div *ngFor="let f of formConfig.fields; let i = index" cdkDrag 
-                class="canvas-item"
-                [class.selected]="selectedFieldIndex === i"
-                (click)="selectFieldByIndex(i)">
-
-                <span>
-                    {{ f.type }} — {{ f.label || 'Unnamed' }}
-                </span>
-
-                <button type="button" class="delete-btn" (click)="deleteField(i); $event.stopPropagation()">
-                    ✕
-                </button>
-            </div>
-
+        <!-- FORM CONFIG -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+          <div>
+            <label>Form Key</label>
+            <input placeholder="Enter form key" [(ngModel)]="formConfig.key" />
+          </div>
+          <div>
+            <label>Form Title</label>
+            <input placeholder="Enter form title" [(ngModel)]="formConfig.title" />
+          </div>
         </div>
 
-        <h4>Actions</h4>
+        <div style="margin-bottom: 25px;">
+          <label>Form Note (Optional)</label>
+          <textarea rows="2" [(ngModel)]="formConfig.note" placeholder="Enter a note or warning message"></textarea>
+        </div>
+
+        <!-- CANVAS AREA -->
+        <h5>Canvas (12-Column Grid Layout)</h5>
+        <div #canvas class="form-canvas-grid" 
+             cdkDropList 
+             [cdkDropListData]="formConfig.containers"
+             (cdkDropListDropped)="dropContainer($event)">
+
+          <div *ngFor="let container of formConfig.containers" 
+               cdkDrag
+               class="container-box-grid"
+               [class.selected]="selectedContainer === container"
+               [ngClass]="getContainerColumnClass(container.columns)"
+               (click)="selectContainer(container); $event.stopPropagation()">
+
+            <div class="container-header">
+              <span>{{ container.name }} ({{ container.columns }} cols)</span>
+              <div class="container-actions">
+                <button class="btn-icon" (click)="duplicateContainer(container, $event)" title="Duplicate">
+                  📋
+                </button>
+                <button class="btn-icon" (click)="deleteContainer(container, $event)" title="Delete">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div class="container-content" 
+                 cdkDropList 
+                 [id]="container.id" 
+                 [cdkDropListData]="container.fields"
+                 [cdkDropListConnectedTo]="getContainerDropListIds()"
+                 (cdkDropListDropped)="dropFieldIntoContainer($event, container)"
+                 (click)="$event.stopPropagation()">
+
+              <div *ngFor="let field of container.fields" 
+                   cdkDrag 
+                   class="canvas-item"
+                   [class.selected]="selectedField === field"
+                   (click)="selectField(field, container); $event.stopPropagation()">
+                <span>{{ field.type }} — {{ field.label || 'Unnamed' }}</span>
+                <button type="button" class="delete-btn" (click)="deleteField(field, container, $event)">✕</button>
+              </div>
+
+              <div *ngIf="container.fields.length === 0" class="empty-zone">
+                Drag fields here
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="formConfig.containers.length === 0" class="empty-canvas-grid">
+            Click "Add Container" to start building your form
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <h5 style="margin-top: 25px;">Actions</h5>
         <div cdkDropList id="canvasActions" [cdkDropListData]="formConfig.actions"
-            [cdkDropListConnectedTo]="['paletteActions']" (cdkDropListDropped)="dropAction($event)">
-
-            <div *ngFor="let a of formConfig.actions; let i = index" cdkDrag 
-                class="canvas-item"
-                [class.selected]="selectedActionIndex === i"
-                (click)="selectActionByIndex(i)">
-
-                <span>
-                    {{ a.type }} — {{ a.label || 'Unnamed' }}
-                </span>
-
-                <button type="button" class="delete-btn" (click)="deleteAction(i); $event.stopPropagation()">
-                    ✕
-                </button>
-            </div>
-
+          [cdkDropListConnectedTo]="['paletteActions']" (cdkDropListDropped)="dropAction($event)" class="drop-zone">
+          <div *ngFor="let action of formConfig.actions; let i = index" cdkDrag class="canvas-item"
+            [class.selected]="selectedAction === action" (click)="selectAction(action)">
+            <span>{{ action.type }} — {{ action.label || 'Unnamed' }}</span>
+            <button type="button" class="delete-btn" (click)="deleteAction(i); $event.stopPropagation()">✕</button>
+          </div>
+          <div *ngIf="formConfig.actions.length === 0" class="empty-zone">
+            Drag actions here
+          </div>
         </div>
 
-        <div style="padding-top: 30px;">
-            <button (click)="preview()">Preview</button>
-            <button (click)="saveConfig()">Save Config</button>
+        <!-- BUTTONS -->
+        <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
+          <button class="btn-primary" (click)="preview()">Preview</button>
+          <button class="btn-success" (click)="saveConfig()">Save Configuration</button>
         </div>
 
+      </div>
     </div>
 
-    <!-- ================= RIGHT EDITOR ================= -->
-    <div class="editor">
+    <!-- RIGHT PANEL: EDITOR -->
+    <div class="inner-box">
+      <div class="inner-header">
+        <h4>⚙️ Properties Editor</h4>
+      </div>
+      <div class="inner-content">
 
-        <!-- ================= FIELD EDITOR ================= -->
-        <div *ngIf="selectedField && selectedFieldIndex >= 0">
+        <!-- CONTAINER EDITOR -->
+        <div *ngIf="selectedContainer && !selectedField && !selectedAction">
+          <p class="editor-subtitle">
+            Editing Container: <strong>{{ selectedContainer.name }}</strong>
+          </p>
 
-            <h3>Field Settings</h3>
-            <p class="subtitle">
-                {{ selectedField.label || selectedField.key || 'New Field' }}
-            </p>
+          <h5>Basic Settings</h5>
+          <label>Container Name</label>
+          <input [(ngModel)]="selectedContainer.name" placeholder="Container Name" />
 
-            <!-- ===== BASIC ===== -->
-            <h4>Basic</h4>
+          <h5>Size & Layout</h5>
+          <label>Column Width (1-12)</label>
+          <select [(ngModel)]="selectedContainer.columns">
+            <option [value]="1">1 column (8.33%)</option>
+            <option [value]="2">2 columns (16.67%)</option>
+            <option [value]="3">3 columns (25%)</option>
+            <option [value]="4">4 columns (33.33%)</option>
+            <option [value]="5">5 columns (41.67%)</option>
+            <option [value]="6">6 columns (50%)</option>
+            <option [value]="7">7 columns (58.33%)</option>
+            <option [value]="8">8 columns (66.67%)</option>
+            <option [value]="9">9 columns (75%)</option>
+            <option [value]="10">10 columns (83.33%)</option>
+            <option [value]="11">11 columns (91.67%)</option>
+            <option [value]="12">12 columns (100%)</option>
+          </select>
 
-            <label>Key</label>
-            <input [(ngModel)]="selectedField.key" placeholder="uniqueFieldKey" />
+          <h5>Styling</h5>
+          <label>Padding (px)</label>
+          <input type="number" [(ngModel)]="selectedContainer.padding!" min="0" />
+        </div>
 
-            <label>Label</label>
-            <input [(ngModel)]="selectedField.label" placeholder="Field Label" />
+        <!-- FIELD EDITOR -->
+        <div *ngIf="selectedField">
+          <p class="editor-subtitle">
+            Editing: <strong>{{ selectedField.label || selectedField.key || 'New Field' }}</strong>
+          </p>
 
+          <h5>Basic Settings</h5>
+          <label>Key</label>
+          <input [(ngModel)]="selectedField.key" placeholder="uniqueFieldKey" />
+
+          <label>Label</label>
+          <input [(ngModel)]="selectedField.label" placeholder="Field Label" />
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="selectedField.required" />
+            <span>Required Field</span>
+          </label>
+
+          <!-- MULTI-SELECT -->
+          <label class="checkbox-row" *ngIf="selectedField.type === 'dropdown'">
+            <input type="checkbox" [(ngModel)]="selectedField.multiple" />
+            <span>Enable Multi-Select</span>
+          </label>
+
+          <!-- DROPDOWN TYPE -->
+          <div *ngIf="selectedField.type === 'dropdown'">
+            <h5>Dropdown Type</h5>
+            <label>Select Dropdown Style</label>
+            <select [(ngModel)]="selectedField.dropdownType">
+              <option value="native">Native HTML Dropdown</option>
+              <option value="primeng">PrimeNG AutoComplete</option>
+            </select>
+          </div>
+
+          <!-- NOTE CONFIGURATION -->
+          <div *ngIf="selectedField.type === 'note'">
+            <h5>Note Configuration</h5>
+            <label>Note Text</label>
+            <textarea rows="3" [(ngModel)]="selectedField.noteText"
+              placeholder="Enter the note/alert message"></textarea>
+            <label>Note Type</label>
+            <select [(ngModel)]="selectedField.noteType">
+              <option value="info">Info (Blue)</option>
+              <option value="warning">Warning (Orange)</option>
+              <option value="success">Success (Green)</option>
+              <option value="danger">Danger (Red)</option>
+            </select>
+          </div>
+
+          <!-- LAYOUT & STYLING -->
+          <h5>Layout & Styling</h5>
+          <label>Layout Mode</label>
+          <select [(ngModel)]="selectedField.layoutMode">
+            <option value="default">Default (Stacked)</option>
+            <option value="split">Split (Label | Input)</option>
+            <option value="inline">Inline (Label Input)</option>
+          </select>
+
+          <div *ngIf="selectedField.layoutMode === 'split'" style="margin-top: 15px;">
+            <label>Label Width</label>
+            <select [(ngModel)]="selectedField.labelWidth">
+              <option value="col-md-2">2 columns</option>
+              <option value="col-md-3">3 columns</option>
+              <option value="col-md-4">4 columns</option>
+              <option value="col-md-6">6 columns</option>
+            </select>
+            <label>Input Width</label>
+            <select [(ngModel)]="selectedField.inputWidth">
+              <option value="col-md-6">6 columns</option>
+              <option value="col-md-8">8 columns</option>
+              <option value="col-md-9">9 columns</option>
+              <option value="col-md-10">10 columns</option>
+            </select>
+          </div>
+
+          <label>Field Layout (Radio/Checkbox)</label>
+          <select [(ngModel)]="selectedField.inputLayout">
+            <option value="vertical">Vertical (Default)</option>
+            <option value="horizontal">Horizontal (Inline)</option>
+          </select>
+
+          <label>Wrapper Classes</label>
+          <input [(ngModel)]="selectedField.class" placeholder="col-span-6 custom-class" />
+
+          <label>Label Classes</label>
+          <input [(ngModel)]="selectedField.labelClass" placeholder="fw-bold text-primary" />
+
+          <label>Input Classes</label>
+          <input [(ngModel)]="selectedField.inputClass" placeholder="w-50 p-2 border rounded" />
+
+          <!-- RESET ON CHANGE -->
+          <h5>Field Reset Configuration</h5>
+          <label>Reset These Fields When Value Changes</label>
+          <select multiple [(ngModel)]="selectedField.resetOnChange" style="min-height: 120px;">
+            <option *ngFor="let f of getResettableFields()" [value]="f.key">
+              {{ f.label || f.key }}
+            </option>
+          </select>
+
+          <!-- CONDITIONAL CLASSES -->
+          <h5>Conditional Classes</h5>
+          <div class="condition-row" *ngFor="let c of selectedField.conditionalClass; let i = index">
+            <select [(ngModel)]="c.when">
+              <option value="">Field...</option>
+              <option *ngFor="let f of getDependencyFields()" [value]="f.key">
+                {{ f.label || f.key }}
+              </option>
+            </select>
+            <input placeholder="Equals value" [(ngModel)]="c.equals" />
+            <input placeholder="Class" [(ngModel)]="c.class" />
+            <button type="button" (click)="removeCondition(i)">✕</button>
+          </div>
+          <button type="button" class="btn-add" (click)="addCondition()">+ Add Condition</button>
+
+          <!-- CONDITIONAL LABELS -->
+          <h5>Conditional Labels</h5>
+          <div class="condition-row" *ngFor="let cl of selectedField.conditionalLabel; let i = index">
+            <select [(ngModel)]="cl.when">
+              <option value="">Field...</option>
+              <option *ngFor="let f of getDependencyFields()" [value]="f.key">
+                {{ f.label || f.key }}
+              </option>
+            </select>
+            <input placeholder="Equals value" [(ngModel)]="cl.equals" />
+            <input placeholder="New Label" [(ngModel)]="cl.label" />
+            <button type="button" (click)="removeConditionalLabel(i)">✕</button>
+          </div>
+          <button type="button" class="btn-add" (click)="addConditionalLabel()">+ Add Conditional Label</button>
+
+          <!-- API CONFIGURATION -->
+          <div *ngIf="selectedField.api">
+            <h5>API Configuration</h5>
+            <label>Endpoint</label>
+            <input [(ngModel)]="selectedField.api.endpoint" placeholder="api/endpoint" />
+            <label>API Mode</label>
+            <select [(ngModel)]="selectedField.api.mode">
+              <option value="load">Load Data</option>
+              <option value="trigger">Trigger API</option>
+            </select>
+            <label>Depends On</label>
+            <select multiple [(ngModel)]="selectedField.api.dependsOn">
+              <option *ngFor="let f of getDependencyFields()" [value]="f.key">
+                {{ f.label || f.key }}
+              </option>
+            </select>
+            <label>Params Map (JSON)</label>
+            <textarea rows="4" [(ngModel)]="paramsMapString" placeholder='{"clientId": "clientId"}'
+              (input)="onParamsMapChange($event)"></textarea>
+          </div>
+
+          <!-- RADIO OPTIONS -->
+          <div *ngIf="selectedField.type === 'radio'">
+            <h5>Radio Options</h5>
+            <div class="option-row" *ngFor="let opt of selectedField.options; let i = index">
+              <input placeholder="Value" [(ngModel)]="opt.id" />
+              <input placeholder="Label" [(ngModel)]="opt.name" />
+              <button type="button" class="btn-remove" (click)="removeOption(i)">✕</button>
+            </div>
+            <button type="button" class="btn-add" (click)="addOption()">+ Add Option</button>
+          </div>
+
+          <!-- DATE RESTRICTIONS -->
+          <div *ngIf="selectedField.type === 'date'">
+            <h5>Date Restrictions</h5>
             <label class="checkbox-row">
-                <input type="checkbox" [(ngModel)]="selectedField.required" />
-                Required
+              <input type="checkbox" [(ngModel)]="selectedField.dateRestrictions!.disableFuture" />
+              <span>Disable Future Dates</span>
             </label>
-
-            <!-- ===== MultiSelect Dropdown ===== -->
-            <label class="checkbox-row" *ngIf="selectedField.type === 'dropdown'">
-                <input type="checkbox" [(ngModel)]="selectedField.multiple" />
-                Enable Multi Select
+            <label class="checkbox-row">
+              <input type="checkbox" [(ngModel)]="selectedField.dateRestrictions!.disablePast" />
+              <span>Disable Past Dates</span>
             </label>
+            <label>Min Date</label>
+            <input type="date" [(ngModel)]="selectedField.dateRestrictions!.minDate" />
+            <label>Max Date</label>
+            <input type="date" [(ngModel)]="selectedField.dateRestrictions!.maxDate" />
 
-            <!-- ===== LAYOUT & STYLING ===== -->
-            <h4>Layout & Styling</h4>
-
-            <label>Layout Mode</label>
-            <select [(ngModel)]="selectedField.layoutMode">
-                <option value="default">Default (Stacked)</option>
-                <option value="split">Split (Label | Input)</option>
-                <option value="inline">Inline (Label Input)</option>
-            </select>
-
-            <!-- Split Layout Settings -->
-            <div *ngIf="selectedField.layoutMode === 'split'">
-                <label>Label Width</label>
-                <select [(ngModel)]="selectedField.labelWidth">
-                    <option value="col-md-2">2 columns</option>
-                    <option value="col-md-3">3 columns</option>
-                    <option value="col-md-4">4 columns</option>
-                    <option value="col-md-6">6 columns</option>
-                </select>
-
-                <label>Input Width</label>
-                <select [(ngModel)]="selectedField.inputWidth">
-                    <option value="col-md-6">6 columns</option>
-                    <option value="col-md-8">8 columns</option>
-                    <option value="col-md-9">9 columns</option>
-                    <option value="col-md-10">10 columns</option>
-                </select>
+            <h6>Restrict Days of Week</h6>
+            <div class="day-selector">
+              <button *ngFor="let day of [0,1,2,3,4,5,6]" type="button" [class.selected]="isAllowedDaySelected(day)"
+                (click)="toggleAllowedDay(day)" class="day-button">
+                {{ getDayName(day).substring(0, 3) }}
+              </button>
             </div>
 
-            <label>Field Layout (Radio/Checkbox)</label>
-            <select [(ngModel)]="selectedField.inputLayout">
-                <option value="vertical">Vertical (Default)</option>
-                <option value="horizontal">Horizontal (Inline)</option>
-            </select>
-
-            <label>Column Preset</label>
-            <select [(ngModel)]="selectedColumnPreset" (ngModelChange)="applyColumnPreset($event)">
-                <option value="">Custom</option>
-                <option value="col-span-12">Full Width</option>
-                <option value="col-span-6">Half Width</option>
-                <option value="col-span-4">One Third</option>
-                <option value="col-span-3">One Quarter</option>
-            </select>
-
-            <label>Wrapper Classes</label>
-            <input [(ngModel)]="selectedField.class" placeholder="col-span-6 custom-class" />
-
-            <label>Label Classes</label>
-            <input [(ngModel)]="selectedField.labelClass" placeholder="fw-bold text-primary" />
-
-            <label>Bootstrap Input Classes (Multi-Select)</label>
-            <select 
-                multiple 
-                [(ngModel)]="selectedBootstrapClasses"
-                (change)="onBootstrapClassChange($event)"
-                style="min-height: 150px;">
-                <optgroup *ngFor="let group of allBootstrapClasses" [label]="group.category">
-                    <option *ngFor="let cls of group.classes" [value]="cls">{{ cls }}</option>
-                </optgroup>
-            </select>
-
-            <label>Input Classes (Manual)</label>
-            <input [(ngModel)]="selectedField.inputClass" placeholder="w-50 p-2 border rounded" />
-
-            <!-- ===== CONDITIONAL CLASSES ===== -->
-            <h4>Conditional Classes</h4>
-
-            <div class="condition-row" *ngFor="let c of selectedField.conditionalClass; let i = index">
-
-                <select [(ngModel)]="c.when">
-                    <option value="">Select field...</option>
-                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
-                        {{ f.label || f.key }}
-                    </option>
-                </select>
-
-                <input placeholder="Equals value" [(ngModel)]="c.equals" />
-
-                <input placeholder="Class" [(ngModel)]="c.class" />
-
-                <button type="button" (click)="removeCondition(i)">✕</button>
+            <h6>Disable Specific Dates</h6>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <input type="date" #restrictedDateInput style="flex: 1;" />
+              <button type="button" class="btn-add"
+                (click)="addRestrictedDate(restrictedDateInput.value); restrictedDateInput.value = ''">
+                + Add
+              </button>
+            </div>
+            <div *ngIf="selectedRestrictedDates.length > 0" class="dates-list">
+              <div *ngFor="let date of selectedRestrictedDates; let i = index" class="date-item">
+                <span>{{ date }}</span>
+                <button type="button" class="delete-btn" (click)="removeRestrictedDate(i)">✕</button>
+              </div>
             </div>
 
-            <button type="button" (click)="addCondition()">
-                + Add Condition
-            </button>
-
-            <!-- ===== CONDITIONAL LABELS ===== -->
-            <h4>Conditional Labels</h4>
-
-            <div class="condition-row" *ngFor="let cl of selectedField.conditionalLabel; let i = index">
-
-                <select [(ngModel)]="cl.when">
-                    <option value="">Select field...</option>
-                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
-                        {{ f.label || f.key }}
-                    </option>
-                </select>
-
-                <input placeholder="Equals value" [(ngModel)]="cl.equals" />
-
-                <input placeholder="New Label" [(ngModel)]="cl.label" />
-
-                <button type="button" (click)="removeConditionalLabel(i)">✕</button>
+            <h6>Quick Date Ranges</h6>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <input [(ngModel)]="dateRangeLabel" placeholder="Label" style="flex: 1;" />
+              <input [(ngModel)]="dateRangeDays" type="number" placeholder="Days" style="width: 80px;" />
+              <button type="button" class="btn-add" (click)="addDateRange()">+ Add</button>
+            </div>
+            <div *ngIf="selectedField.dateRanges && selectedField.dateRanges.length > 0" class="dates-list">
+              <div *ngFor="let range of selectedField.dateRanges; let i = index" class="date-item">
+                <span><strong>{{ range.label }}</strong> — {{ range.days }} days</span>
+                <button type="button" class="delete-btn" (click)="removeDateRange(i)">✕</button>
+              </div>
             </div>
 
-            <button type="button" (click)="addConditionalLabel()">
-                + Add Conditional Label
-            </button>
-
-            <!-- ===== API CONFIGURATION ===== -->
-            <h4 *ngIf="selectedField.api">API Configuration</h4>
-
-            <div *ngIf="selectedField.api">
-
-                <label>Endpoint</label>
-                <input [(ngModel)]="selectedField.api.endpoint" placeholder="api/endpoint" />
-
-                <!-- API MODE -->
-                <label>API Mode</label>
-                <select [(ngModel)]="selectedField.api.mode">
-                    <option value="load">Load Data</option>
-                    <option value="trigger">Trigger API</option>
-                </select>
-
-                <!-- DEPENDENCIES -->
-                <label>Depends On</label>
-                <select multiple [(ngModel)]="selectedField.api.dependsOn">
-                    <option *ngFor="let f of dependencyFields(selectedField)" [value]="f.key">
-                        {{ f.label || f.key }}
-                    </option>
-                </select>
-
-                <!-- PARAMS MAP - FIX: Use textarea -->
-                <label>Params Map (JSON)</label>
-                <textarea 
-                    rows="4"
-                    [(ngModel)]="paramsMapString"
-                    placeholder='{"clientId": "clientId"}'
-                    (input)="onParamsMapChange($event)">
-                </textarea>
-
+            <h6>Link with Other Dates</h6>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <select [(ngModel)]="newDateInteraction.linkedField" style="flex: 1;">
+                <option value="">Select field...</option>
+                <option *ngFor="let f of getDateFields()" [value]="f.key">
+                  {{ f.label || f.key }}
+                </option>
+              </select>
+              <select [(ngModel)]="newDateInteraction.type" style="width: 120px;">
+                <option value="minDate">After</option>
+                <option value="maxDate">Before</option>
+              </select>
+              <button type="button" class="btn-add" (click)="addDateInteraction()">+ Link</button>
             </div>
-
-            <!-- ===== STATIC RADIO OPTIONS ===== -->
-            <div *ngIf="selectedField.type === 'radio'">
-
-                <h4>Radio Options</h4>
-
-                <div class="option-row" *ngFor="let opt of selectedField.options; let i = index">
-
-                    <input placeholder="Value" [(ngModel)]="opt.id" />
-
-                    <input placeholder="Label" [(ngModel)]="opt.name" />
-
-                    <button type="button" class="btn-remove" (click)="removeOption(i)">
-                        ✕
-                    </button>
-                </div>
-
-                <button type="button" class="btn-add" (click)="addOption()">
-                    + Add Option
-                </button>
-
+            <div *ngIf="selectedField.dateInteractions && selectedField.dateInteractions.length > 0" class="dates-list">
+              <div *ngFor="let interaction of selectedField.dateInteractions; let i = index" class="date-item">
+                <span>
+                  {{ interaction.type === 'minDate' ? 'Min' : 'Max' }}:
+                  {{ getLinkedFieldLabel(interaction.linkedField) }}
+                </span>
+                <button type="button" class="delete-btn" (click)="removeDateInteraction(i)">✕</button>
+              </div>
             </div>
+          </div>
 
-            <!-- ===== SAVE BUTTON ===== -->
-            <div class="save-section">
-                <button type="button" class="btn-save" (click)="saveFieldChanges()">
-                    💾 Save Field Settings
-                </button>
-            </div>
-
+          <button type="button" class="btn-save" (click)="saveFieldChanges()">
+            💾 Save Field Settings
+          </button>
         </div>
 
-        <!-- ================= ACTION EDITOR ================= -->
-        <div *ngIf="selectedAction && selectedActionIndex >= 0">
-
-            <h3>Action Settings</h3>
-            <p class="subtitle">
-                {{ selectedAction.label || selectedAction.key || 'New Action' }}
-            </p>
-
-            <h4>Basic</h4>
-
-            <label>Key</label>
-            <input [(ngModel)]="selectedAction.key" placeholder="submit" />
-
-            <label>Label</label>
-            <input [(ngModel)]="selectedAction.label" placeholder="Submit" />
-
-            <h4>Action Behaviour</h4>
-
-            <label>Action Type</label>
-            <select [(ngModel)]="selectedAction.action">
-                <option value="">API Action</option>
-                <option value="reset">Reset</option>
-                <option value="cancel">Cancel</option>
+        <!-- ACTION EDITOR -->
+        <div *ngIf="selectedAction">
+          <p class="editor-subtitle">
+            Editing: <strong>{{ selectedAction.label || selectedAction.key || 'New Action' }}</strong>
+          </p>
+          <h5>Basic Settings</h5>
+          <label>Key</label>
+          <input [(ngModel)]="selectedAction.key" placeholder="submit" />
+          <label>Label</label>
+          <input [(ngModel)]="selectedAction.label" placeholder="Submit" />
+          <h5>Action Behaviour</h5>
+          <label>Action Type</label>
+          <select [(ngModel)]="selectedAction.action">
+            <option value="">API Action</option>
+            <option value="reset">Reset</option>
+            <option value="cancel">Cancel</option>
+          </select>
+          <div *ngIf="!selectedAction.action">
+            <label>API Endpoint</label>
+            <input [(ngModel)]="selectedAction.api!.endpoint" placeholder="/api/submit" />
+            <label>HTTP Method</label>
+            <select [(ngModel)]="selectedAction.api!.method">
+              <option value="POST">POST</option>
+              <option value="GET">GET</option>
             </select>
-
-            <div *ngIf="!selectedAction.action">
-
-                <label>API Endpoint</label>
-                <input [(ngModel)]="selectedAction.api!.endpoint" placeholder="/api/submit" />
-
-                <label>HTTP Method</label>
-                <select [(ngModel)]="selectedAction.api!.method">
-                    <option value="POST">POST</option>
-                    <option value="GET">GET</option>
-                </select>
-
-            </div>
-
-            <!-- ===== SAVE BUTTON ===== -->
-            <div class="save-section">
-                <button type="button" class="btn-save" (click)="saveActionChanges()">
-                    💾 Save Action Settings
-                </button>
-            </div>
-
+          </div>
+          <button type="button" class="btn-save" (click)="saveActionChanges()">
+            💾 Save Action Settings
+          </button>
         </div>
 
-        <!-- ===== EMPTY STATE ===== -->
-        <div *ngIf="!selectedField && !selectedAction" class="empty-state">
-            <p>👈 Select a field or action to edit its settings</p>
+        <!-- EMPTY STATE -->
+        <div *ngIf="!selectedContainer && !selectedField && !selectedAction" class="empty-state">
+          <p>👈 Select a container, field, or action to edit</p>
         </div>
 
+      </div>
     </div>
 
+  </div>
 </div>
